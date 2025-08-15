@@ -18,7 +18,7 @@ export function manifest(config = {}) {
     resources: getResources(config),         // only stream
     types: [Type.MOVIE, Type.SERIES],        // limited types
     background: `${config.host}/images/background_v1.jpg`,
-    logo: '`${config.host}/images/logo.png', // changed
+    logo: `${config.host}/images/logo.png`, // changed
     behaviorHints: {
       configurable: true,
       configurationRequired: false
