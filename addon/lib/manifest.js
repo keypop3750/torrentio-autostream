@@ -11,17 +11,23 @@ export function manifest(config = {}) {
   const overrideManifest = getManifestOverride(config);
   const baseManifest = {
     id: 'com.stremio.torrentio.addon',
-    version: '0.0.15',
-    name: getName(overrideManifest, config),
-    description: getDescription(config),
-    catalogs: getCatalogs(config),
-    resources: getResources(config),
-    types: [Type.MOVIE, Type.SERIES, Type.ANIME, Type.OTHER],
+    version: '2.0.2', // changed
+    name: getName(overrideManifest, config), // will default to "AutoStream"
+    description: getDescription(config),     // simplified static description
+    catalogs: getCatalogs(config),           // now returns []
+    resources: getResources(config),         // only stream
+    types: [Type.MOVIE, Type.SERIES],        // limited types
     background: `${config.host}/images/background_v1.jpg`,
-    logo: `${config.host}/images/logo_v1.png`,
+    logo: '`${config.host}/images/logo.png', // changed
     behaviorHints: {
       configurable: true,
       configurationRequired: false
+    },
+    // added
+    stremioAddonsConfig: {
+      issuer: 'https://stremio-addons.net',
+      signature:
+        'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..KPt7fOiOCod52ZjlFWg52A.dt7eIyal-1oAkU4cOG5c6YPsWn70Ds6AXqY1FJX3Ikqzzeu1gzgj2_xO4e4zh7gsXEyjhoAJ-L9Pg6UI57XD6FWjzpRcvV0v-6WuKmfZO_hDcDIrtVQnFf0nK2dnO7-n.v25_jaY5E-4yH_cxyTKfsA'
     }
   };
   return Object.assign(baseManifest, overrideManifest);
@@ -29,13 +35,14 @@ export function manifest(config = {}) {
 
 export function dummyManifest() {
   const manifestDefault = manifest();
-  manifestDefault.catalogs = [{ id: 'dummy', type: Type.OTHER }];
-  manifestDefault.resources = ['stream', 'meta'];
+  manifestDefault.catalogs = [];          // no catalogs
+  manifestDefault.resources = ['stream']; // only stream
   return manifestDefault;
 }
 
 function getName(manifest, config) {
-  const rootName = manifest?.name || 'Torrentio';
+  // default rootName changed from 'Torrentio' to 'AutoStream'
+  const rootName = manifest?.name || 'AutoStream';
   const mochSuffix = MochProviders
       .filter(moch => config[moch.key])
       .map(moch => moch.shortName)
@@ -44,46 +51,21 @@ function getName(manifest, config) {
 }
 
 function getDescription(config) {
-  const providersList = config[Providers.key] || DefaultProviders;
-  const enabledProvidersDesc = Providers.options
-      .map(provider => `${provider.label}${providersList.includes(provider.key) ? '(+)' : '(-)'}`)
-      .join(', ')
-  const enabledMochs = MochProviders
-      .filter(moch => config[moch.key])
-      .map(moch => moch.name)
-      .join(' & ');
-  const possibleMochs = MochProviders.map(moch => moch.name).join('/')
-  const mochsDesc = enabledMochs ? ` and ${enabledMochs} enabled` : '';
-  return 'Provides torrent streams from scraped torrent providers.'
-      + ` Currently supports ${enabledProvidersDesc}${mochsDesc}.`
-      + ` To configure providers, ${possibleMochs} support and other settings visit https://torrentio.strem.fun`
+  // simplified static description per request
+  return 'AutoStream is a fork of Torrentio that picks the single best stream for each title, balancing quality with seeders. Debrid can be enabled via the Configure tab.';
 }
 
 function getCatalogs(config) {
-  return MochProviders
-      .filter(moch => showDebridCatalog(config) && config[moch.key])
-      .map(moch => moch.catalogs.map(catalogName => ({
-        id: catalogName ? `torrentio-${moch.key}-${catalogName.toLowerCase()}` : `torrentio-${moch.key}`,
-        name: catalogName ? `${moch.name} ${catalogName}` : `${moch.name}`,
-        type: 'other',
-        extra: [{ name: 'skip' }],
-      })))
-      .reduce((a, b) => a.concat(b), []);
+  // no catalogs advertised
+  return [];
 }
 
 function getResources(config) {
   const streamResource = {
     name: 'stream',
-    types: [Type.MOVIE, Type.SERIES, Type.ANIME],
+    types: [Type.MOVIE, Type.SERIES],
     idPrefixes: ['tt', 'kitsu']
   };
-  const metaResource = {
-    name: 'meta',
-    types: [Type.OTHER],
-    idPrefixes: MochProviders.filter(moch => config[moch.key]).map(moch => moch.key)
-  };
-  if (showDebridCatalog(config) && MochProviders.filter(moch => config[moch.key]).length) {
-    return [streamResource, metaResource];
-  }
+  // only stream resource
   return [streamResource];
 }
