@@ -11,6 +11,9 @@ import StaticLinks from './moch/static.js';
 import { createNamedQueue } from "./lib/namedQueue.js";
 import pLimit from "p-limit";
 
+// ⬇️ NEW: AutoStream-style nice titles
+import { beautifyTitles } from './lib/beautify.js';
+
 const CACHE_MAX_AGE = parseInt(process.env.CACHE_MAX_AGE) || 60 * 60; // 1 hour in seconds
 const CACHE_MAX_AGE_EMPTY = 60; // 60 seconds
 const CATALOG_CACHE_MAX_AGE = 0; // 0 minutes
@@ -29,6 +32,8 @@ builder.defineStreamHandler((args) => {
   return requestQueue.wrap(args.id, () => resolveStreams(args))
       .then(streams => applyFilters(streams, args.extra))
       .then(streams => applySorting(streams, args.extra, args.type))
+      // ⬇️ NEW: Beautify titles like “Show — S02E05” / “Movie — 1080p” when &beautify=1
+      .then(streams => beautifyTitles(streams, { id: args.id, type: args.type, beautify: args.extra?.beautify }))
       .then(streams => applyStaticInfo(streams))
       .then(streams => applyMochs(streams, args.extra))
       .then(streams => enrichCacheParams(streams))
